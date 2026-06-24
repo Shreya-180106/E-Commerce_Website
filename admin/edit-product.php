@@ -1,61 +1,121 @@
 <?php
 include '../includes/db.php';
-include '../includes/header.php';
 
 if (!isset($_GET['id'])) {
-    echo "<p>Product not found.</p>";
-    include '../includes/footer.php';
+    header("Location: manage-products.php");
     exit;
 }
 
-$product_id = intval($_GET['id']);
-$query = "SELECT * FROM products WHERE id = $product_id";
-$result = mysqli_query($conn, $query);
+$id = (int) $_GET['id'];
+$product_query = mysqli_query($conn, "SELECT * FROM products WHERE id = $id");
 
-if (mysqli_num_rows($result) == 0) {
-    echo "<p>Product not found.</p>";
-    include '../includes/footer.php';
+if (!$product_query || mysqli_num_rows($product_query) === 0) {
+    header("Location: manage-products.php");
     exit;
 }
 
-$product = mysqli_fetch_assoc($result);
-$message = "";
+$product = mysqli_fetch_assoc($product_query);
+$message = '';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = mysqli_real_escape_string($conn, trim($_POST['name']));
-    $description = mysqli_real_escape_string($conn, trim($_POST['description']));
-    $price = floatval($_POST['price']);
-    $category = mysqli_real_escape_string($conn, trim($_POST['category']));
-    $image = mysqli_real_escape_string($conn, trim($_POST['image']));
+$page_title = "Edit Product | ShopEase Admin";
+$page_badge = "Update Product";
+$page_heading = "Edit Product";
+$page_description = "Modify the product details and save changes to your store catalog.";
 
-    $update_query = "UPDATE products 
-                     SET name='$name', description='$description', price='$price', category='$category', image='$image'
-                     WHERE id=$product_id";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
+    $name = trim($_POST['name'] ?? '');
+    $price = trim($_POST['price'] ?? '');
+    $image = trim($_POST['image'] ?? '');
+    $category = trim($_POST['category'] ?? '');
+    $description = trim($_POST['description'] ?? '');
 
-    if (mysqli_query($conn, $update_query)) {
-        echo "<script>alert('Product updated successfully!'); window.location='dashboard.php';</script>";
-        exit;
+    if ($name === '' || $price === '' || $description === '' || $category === '') {
+        $message = '<div class="admin-alert error">Please fill all required fields.</div>';
     } else {
-        $message = "Failed to update product.";
+        $name = mysqli_real_escape_string($conn, $name);
+        $price = mysqli_real_escape_string($conn, $price);
+        $image = mysqli_real_escape_string($conn, $image);
+        $category = mysqli_real_escape_string($conn, $category);
+        $description = mysqli_real_escape_string($conn, $description);
+
+        $update_query = "UPDATE products 
+                         SET name='$name', price='$price', image='$image', category='$category', description='$description'
+                         WHERE id=$id";
+
+        if (mysqli_query($conn, $update_query)) {
+            $message = '<div class="admin-alert success">Product updated successfully 🎉</div>';
+            $product_query = mysqli_query($conn, "SELECT * FROM products WHERE id = $id");
+            $product = mysqli_fetch_assoc($product_query);
+        } else {
+            $message = '<div class="admin-alert error">Error updating product: ' . mysqli_error($conn) . '</div>';
+        }
     }
 }
+
+include 'includes/admin-header.php';
+include 'includes/admin-sidebar.php';
 ?>
 
-<div class="form-container">
-    <h2>Edit Product</h2>
+<main class="admin-main">
+    <div class="admin-topbar">
+        <div>
+            <span class="badge"><?php echo $page_badge; ?></span>
+            <h1><?php echo $page_heading; ?></h1>
+            <p><?php echo $page_description; ?></p>
+        </div>
+    </div>
 
-    <?php if (!empty($message)) { ?>
-        <p class="error-message"><?php echo $message; ?></p>
-    <?php } ?>
+    <section class="admin-form-card">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Edit Product Details</h2>
+                <p>Update product name, category, price, image and description.</p>
+            </div>
+        </div>
 
-    <form method="POST">
-        <input type="text" name="name" value="<?php echo $product['name']; ?>" required>
-        <textarea name="description" required><?php echo $product['description']; ?></textarea>
-        <input type="number" step="0.01" name="price" value="<?php echo $product['price']; ?>" required>
-        <input type="text" name="category" value="<?php echo $product['category']; ?>" required>
-        <input type="text" name="image" value="<?php echo $product['image']; ?>" required>
-        <button type="submit" class="btn">Update Product</button>
-    </form>
-</div>
+        <?php echo $message; ?>
 
-<?php include '../includes/footer.php'; ?>
+        <form method="POST" class="admin-form">
+            <div class="admin-form-grid">
+                <div class="form-group">
+                    <label>Product Name *</label>
+                    <input type="text" name="name" value="<?php echo htmlspecialchars($product['name']); ?>" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Product Price *</label>
+                    <input type="number" step="0.01" name="price" value="<?php echo htmlspecialchars($product['price']); ?>" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select name="category" required>
+                        <?php
+                        $categories = ['Clothing', 'Electronics', 'Footwear', 'Beauty', 'Accessories', 'Home Decor'];
+                        foreach ($categories as $cat) {
+                            $selected = ($product['category'] === $cat) ? 'selected' : '';
+                            echo "<option value=\"$cat\" $selected>$cat</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Product Image URL</label>
+                    <input type="text" name="image" value="<?php echo htmlspecialchars($product['image']); ?>">
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Description *</label>
+                    <textarea name="description" rows="6" required><?php echo htmlspecialchars($product['description']); ?></textarea>
+                </div>
+            </div>
+
+            <div class="admin-form-actions">
+                <button type="submit" name="update_product" class="btn">Update Product</button>
+                <a href="manage-products.php" class="btn-outline">Back to Products</a>
+            </div>
+        </form>
+    </section>
+
+<?php include 'includes/admin-footer.php'; ?>

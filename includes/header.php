@@ -1,54 +1,83 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 $current_folder = basename(dirname($_SERVER['PHP_SELF']));
 $is_admin = ($current_folder === 'admin');
-
 $base = $is_admin ? '../' : '';
+$current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Commerce Website</title>
+    <title>ShopEase</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Main CSS -->
     <link rel="stylesheet" href="<?php echo $base; ?>assets/css/style.css">
 </head>
 <body>
 
-<header>
-    <div class="container nav-container">
-        <h1 class="logo">
-            <a href="<?php echo $base; ?>index.php">ShopEasy</a>
-        </h1>
+<header class="site-header">
+    <div class="topbar">
+        <div class="container topbar-inner">
+            <p>Free shipping on orders above ₹999 • Soft pastel collection now live ✨</p>
+        </div>
+    </div>
 
-        <nav>
-            <ul>
-                <li><a href="<?php echo $base; ?>index.php">Home</a></li>
-                <li><a href="<?php echo $base; ?>products.php">Products</a></li>
-                <li><a href="<?php echo $base; ?>cart.php">Cart</a></li>
+    <div class="navbar-wrapper">
+        <div class="container navbar">
+            <!-- Logo -->
+            <a href="<?php echo $base; ?>index.php" class="logo">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <span>ShopEase</span>
+            </a>
 
-                <?php if(isset($_SESSION['user_id'])) { ?>
-                    <li><a href="<?php echo $base; ?>checkout.php">Checkout</a></li>
-                    <li><a href="<?php echo $base; ?>logout.php">Logout</a></li>
+            <!-- Navigation -->
+            <nav class="nav-menu">
+                <a href="<?php echo $base; ?>index.php" class="<?php echo ($current_page == 'index.php') ? 'active' : ''; ?>">Home</a>
+                <a href="<?php echo $base; ?>products.php" class="<?php echo ($current_page == 'products.php') ? 'active' : ''; ?>">Products</a>
+                <a href="<?php echo $base; ?>index.php#categories">Categories</a>
+                <a href="<?php echo $base; ?>index.php#about">About</a>
+                <a href="<?php echo $base; ?>index.php#contact">Contact</a>
+            </nav>
+
+            <!-- Search -->
+            <div class="nav-search">
+                <input type="text" placeholder="Search products...">
+                <button type="button"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+
+            <!-- Actions -->
+            <div class="nav-actions">
+                <a href="<?php echo $base; ?>login.php" class="icon-btn" title="Account">
+                    <i class="fa-regular fa-user"></i>
+                </a>
+
+                <a href="<?php echo $base; ?>cart.php" class="icon-btn" title="Cart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </a>
+
+                <a href="<?php echo $base; ?>admin/dashboard.php" class="dashboard-btn">
+                    Admin
+                </a>
+
+                <?php if (isset($_SESSION['user_id'])) { ?>
+                    <a href="<?php echo $base; ?>logout.php" class="auth-btn">Logout</a>
                 <?php } else { ?>
-                    <li><a href="<?php echo $base; ?>login.php">Login</a></li>
-                    <li><a href="<?php echo $base; ?>register.php">Register</a></li>
+                    <a href="<?php echo $base; ?>register.php" class="auth-btn">Sign Up</a>
                 <?php } ?>
-
-                <!-- Dashboard visible everywhere -->
-                <li><a href="<?php echo $base; ?>admin/dashboard.php">Dashboard</a></li>
-
-                <!-- Admin-only extra links -->
-                <?php if ($is_admin) { ?>
-                    <li><a href="<?php echo $base; ?>admin/add-product.php">Add Product</a></li>
-                    <li><a href="<?php echo $base; ?>admin/orders.php">Orders</a></li>
-                <?php } ?>
-            </ul>
-        </nav>
+            </div>
+        </div>
     </div>
 </header>
 
-<main class="container">
+<main>
